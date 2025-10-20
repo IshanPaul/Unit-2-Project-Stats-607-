@@ -1,0 +1,1 @@
+from src.dgps import generate_data
