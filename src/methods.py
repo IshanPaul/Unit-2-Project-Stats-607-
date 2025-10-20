@@ -10,3 +10,9 @@ def fit_lasso(X, y, lam, max_iter=1000):
     lasso.fit(X, y)
     return lasso.coef_
 
+def theoretical_lambda(sigma, n, p, c=1.0):
+    """
+    Compute theoretical lambda for Lasso based on noise level sigma,
+    number of samples n, and number of features p.
+    """
+    return c * sigma * np.sqrt(2 * np.log(p) / n)
