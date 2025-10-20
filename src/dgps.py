@@ -19,9 +19,10 @@ def generate_X(n, p, rho=0.5, seed=None):
     L = np.linalg.cholesky(Sigma)
     Z = np.random.normal(size=(n, p))
     X = Z @ L.T
+    X /= np.linalg.norm(X, axis=0, keepdims=True)
     return X
 
-def generate_beta(p, k, b = 1.0, seed=None):
+def generate_beta(p, k, b=1.0, seed=None):
     """
     Generate sparse true coefficient vector
     beta of length p with k non-zero entries,
