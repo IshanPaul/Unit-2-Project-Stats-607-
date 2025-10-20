@@ -95,7 +95,7 @@ if __name__ == "__main__":
         b=1.0,
         sigma=1.0,
         lam_factor=1.0,
-        n_reps=10,
+        n_reps=1000,
         seed=42,
         save=True
     )
