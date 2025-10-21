@@ -85,20 +85,29 @@ def run_simulation(n, p, k, rho, b, sigma, lam_factor, n_reps, seed=None, save: 
 
     return df
 
+def n_from_theta(theta, p, k):
+    return int(round(2 * k * np.log(p - k) * theta))
+
 if __name__ == "__main__":
     # Example usage
     p = 1000
     k = 50
-
-    df_results = run_simulation(
-        n=100,
-        p=p,
-        k=k,
-        rho=0.5,
-        b=1.0,
-        sigma=1.0,
-        lam_factor=1.0,
-        n_reps=1000,
-        seed=42,
-        save=True
-    )
+    rho = [0, 0.5, 0.9]
+    theta = [0.5,0.75,1.0,1.25,1.5,2.0]
+    n = [n_from_theta(t, p=1000, k=50) for t in theta]
+    b = [1, 10, 100]
+    for i in range(len(n)):
+        for j in range(3):
+            for l in range(3):
+                run_simulation(
+                    n=n[i],
+                    p=p,
+                    k=k,
+                    rho=rho[j],
+                    b=b[l],
+                    sigma=1.0,
+                    lam_factor=1.0,
+                    n_reps=1000,
+                    seed=42,
+                    save=True
+                )
