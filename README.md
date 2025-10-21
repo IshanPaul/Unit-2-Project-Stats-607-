@@ -18,21 +18,29 @@ The entire project follows the **ADEMP framework** (Aims, Data-generating mechan
 ---
 
 ## Directory Structure
+Unit-2-Project-Stats-607-/
+├── Makefile
+├── README.md
+├── ADEMP.md
+├── requirements.txt
 ├── src/
-│ ├── init.py
-│ ├── dgps.py # Data generation (X, β, y)
-│ ├── methods.py # Lasso and Group Lasso estimators
-│ ├── simulation.py # Main simulation pipeline
-│ ├── figures.py # Visualization and analysis
+│   ├── dgps.py
+│   ├── methods.py
+│   ├── simulation.py
+│   ├── figures.py
+│   ├── __init__.py
+│
+├── scripts/
+│   └── focused_search_lam.py
+│
+├── tests/
+│   └── test_basic.py
 │
 ├── results/
-│ ├── raw/ # Raw simulation outputs
-│ └── figures/ # Generated plots
-│
-├── data/ # Optional cached simulated datasets
-├── tests/ # Unit tests
-│
-├── ADEMP.md # Full ADEMP description
-├── Makefile # Run full pipeline (simulate → analyze → figures)
-├── requirements.txt
-└── README.md
+│   ├── raw/
+│   ├── figures/
+│   └── analysis/
+
+
+**Reference:**  
+Wainwright, M. J. (2009). *Sharp thresholds for high-dimensional and noisy sparsity recovery using ℓ₁-constrained quadratic programming (Lasso)*. IEEE Trans. Info. Theory, 55(5), 2183–2202.
