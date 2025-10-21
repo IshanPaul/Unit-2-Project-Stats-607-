@@ -18,3 +18,21 @@ The entire project follows the **ADEMP framework** (Aims, Data-generating mechan
 ---
 
 ## Directory Structure
+├── src/
+│ ├── init.py
+│ ├── dgps.py # Data generation (X, β, y)
+│ ├── methods.py # Lasso and Group Lasso estimators
+│ ├── simulation.py # Main simulation pipeline
+│ ├── figures.py # Visualization and analysis
+│
+├── results/
+│ ├── raw/ # Raw simulation outputs
+│ └── figures/ # Generated plots
+│
+├── data/ # Optional cached simulated datasets
+├── tests/ # Unit tests
+│
+├── ADEMP.md # Full ADEMP description
+├── Makefile # Run full pipeline (simulate → analyze → figures)
+├── requirements.txt
+└── README.md
