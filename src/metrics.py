@@ -2,21 +2,49 @@ import numpy as np
 
 def support(beta, tol=1e-8):
     """
-    Compute the support of a coefficient vector beta.
-    The support is the set of indices where beta is non-zero
-    (within a tolerance level tol).
+    parameters:
+    beta : np.ndarray
+        Coefficient vector.
+    tol : float
+        Tolerance level to consider a coefficient as non-zero.
+    Returns: np.ndarray
+        Indices of non-zero coefficients in beta.
     """
     return np.where(np.abs(beta) > tol)[0]
 
-def exact_support_recovery(beta_true, beta_est, tol=1e-8):
+def support_recovery(beta_true, beta_est, tol=1e-8):
     """
-    Check if the estimated coefficient vector beta_est
-    exactly recovers the support of the true coefficient vector beta_true.
-    Returns True if supports match, False otherwise.
+    parameters:
+    beta_true : np.ndarray
+        True coefficient vector.
+    beta_est : np.ndarray
+        Estimated coefficient vector.
+    tol : float
+        Tolerance level to consider a coefficient as non-zero.
+    
+    Returns: bool
+        True if supports match exactly, False otherwise.
     """
     support_true = support(beta_true, tol)
     support_est = support(beta_est, tol)
     return np.array_equal(np.sort(support_true), np.sort(support_est))
+
+def exact_support_recovery(beta_true, beta_est, tol=1e-8):
+    """
+    parameters:
+    beta_true : np.ndarray
+        True coefficient vector.
+    beta_est : np.ndarray
+        Estimated coefficient vector.
+    tol : float
+        Tolerance level to consider a coefficient as non-zero.
+    
+    Returns: bool
+        True if supports match exactly including sign of coefficients, False otherwise.
+    """
+    support_true = support(beta_true, tol)
+    support_est = support(beta_est, tol)
+    return support_recovery(beta_true, beta_est, tol) and np.all(np.sign(beta_true[support_true]) == np.sign(beta_est[support_est]))
 
 def mse(beta_true, beta_est):
     """
