@@ -1,16 +1,8 @@
-# Core scientific stack
+matplotlib
 numpy
 pandas
-matplotlib
 scikit-learn
-itertools
 seaborn
-datetime
 tqdm
-typing
-
-# Testing
-pytest
-
-# Optional utilities (for file paths and scripts)
-pathlib
+joblib
+argparse

@@ -1,84 +1,42 @@
-# ======================================================
-# Makefile — Full workflow: Lasso simulation + analysis + plots + lambda search + heatmaps + tests
-# ======================================================
+# Makefile for Simulation Study Pipeline
 
-PYTHON = python
-SRC = src
-RESULTS = results
-RAW = $(RESULTS)/raw
-FIGURES = $(RESULTS)/figures
-TESTS = tests
-SCRIPTS = scripts
+PY=python3
+VENV=.venv
+PYBIN=$(VENV)/bin/python
+PIP=$(VENV)/bin/pip
 
-# ------------------------------------------------------
-# Default target: install → simulate → analyze → figures → lambda_search → heatmaps → test
-# ------------------------------------------------------
-all: install simulate analyze figures lambda_search heatmaps test
+# Detect number of CPU cores (macOS or Linux)
+NCORES=$(shell (sysctl -n hw.ncpu 2>/dev/null || nproc))
 
-# ------------------------------------------------------
-# Step 0: Install dependencies
-# ------------------------------------------------------
-install:
-	@echo "📦 Installing dependencies..."
-	pip install -r requirements.txt
+# Default target
+all: simulate analyze figures
 
-# ------------------------------------------------------
-# Step 1: Run main simulation
-# ------------------------------------------------------
+# Environment setup
+venv:
+	@test -d $(VENV) || $(PY) -m venv $(VENV)
+
+install: venv
+	$(PIP) install --upgrade pip
+	$(PIP) install -r requirements.txt
+
+# Run full simulation (serial)
 simulate:
-	@echo "▶ Running main simulation pipeline..."
-	$(PYTHON) $(SRC)/simulation.py --save $(RAW)
+	$(PYBIN) -m src.simulation --mode large --save
 
-# ------------------------------------------------------
-# Step 2: Aggregate and analyze results
-# ------------------------------------------------------
-analyze:
-	@echo "📊 Aggregating and analyzing results..."
-	$(PYTHON) $(SRC)/figures.py --analyze $(RAW) --save $(RESULTS)
+# Run full simulation (parallel)
+large:
+	$(PYBIN) -m src.simulation --mode large --save --n_jobs $(NCORES)
 
-# ------------------------------------------------------
-# Step 3: Generate standard plots
-# ------------------------------------------------------
+# Generate visualizations
 figures:
-	@echo "📈 Generating plots..."
-	$(PYTHON) $(SRC)/figures.py --plot $(RESULTS)/summary.csv --out $(FIGURES)
+	$(PYBIN) -m src.figures
 
-# ------------------------------------------------------
-# Step 4: Focused lambda-factor search
-# ------------------------------------------------------
-lambda_search:
-	@echo "🔍 Running focused lambda-factor search..."
-	$(PYTHON) $(SCRIPTS)/focused_search_lam.py
-
-# ------------------------------------------------------
-# Step 5: Heatmap sweeps (lambda vs sigma, lambda vs k)
-# ------------------------------------------------------
-heatmaps:
-	@echo "🔥 Running heatmap sweeps (lambda, sigma) and (lambda, k)..."
-	$(PYTHON) $(SCRIPTS)/heatmaps.py
-
-# ------------------------------------------------------
-# Step 6: Run unit tests
-# ------------------------------------------------------
+# Run tests
 test:
-	@echo "🧪 Running tests..."
-	pytest -q $(TESTS)
+	$(PYBIN) -m tests.test_basic
 
-# ------------------------------------------------------
-# Step 7: Clean generated results
-# ------------------------------------------------------
+# Clean all generated files
 clean:
-	@echo "🧹 Cleaning up generated files..."
-	rm -rf $(RAW)/*.csv $(RAW)/*.pkl \
-	       $(RESULTS)/summary.csv \
-	       $(FIGURES)/*.png \
-	       $(RESULTS)/analysis/*.csv \
-	       $(RESULTS)/analysis/*.png
+	rm -rf $(VENV) results/raw/*.csv results/figures/*.png __pycache__ .pytest_cache
 
-# ------------------------------------------------------
-# Utility: run only tests (quick check)
-# ------------------------------------------------------
-check:
-	pytest -q $(TESTS)
-
-.PHONY: all install simulate analyze figures lambda_search heatmaps test clean check
+.PHONY: all simulate large analyze figures test clean
