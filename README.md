@@ -19,6 +19,7 @@ The entire project follows the **ADEMP framework** (Aims, Data-generating mechan
 
 ## Directory Structure
 
+
 Unit-2-Project-Stats-607-/
 ├── Makefile
 ├── README.md
@@ -34,6 +35,7 @@ Unit-2-Project-Stats-607-/
 ├── scripts/
 │   └── focused_search_lam.py
 │   ├── heatmaps.py
+│
 │
 ├── tests/
 │   └── test_basic.py
