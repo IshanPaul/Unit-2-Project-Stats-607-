@@ -48,15 +48,32 @@ def exact_support_recovery(beta_true, beta_est, tol=1e-8):
 
 def mse(beta_true, beta_est):
     """
-    Compute Mean Squared Error (MSE) between true coefficients
-    beta_true and estimated coefficients beta_est.
+    parameters:
+    beta_true : np.darray
+        True coefficient vector.
+    beta_est : np.darray
+        Estimated coefficient vector.
+    
+    Returns: float
+        Mean Squared Error between beta_true and beta_est.
     """
     return np.mean((beta_true - beta_est) ** 2)
 
 def tpr_fdp(beta_true, beta_est, tol=1e-8):
     """
-    Compute True Positive Rate (TPR) and False Discovery Proportion (FDP)
-    for the estimated coefficients beta_est compared to true coefficients beta_true.
+    parameters: 
+    beta_true : np.ndarray
+        True coefficient vector.
+    beta_est : np.ndarray
+        Estimated coefficient vector.
+    tol : float
+        Tolerance level to consider a coefficient as non-zero.
+
+    Returns: tuple (TPR, FDP)
+    TPR : float 
+        True Positive Rate
+    FDP : float
+        False Discovery Proportion
     TPR = TP / (TP + FN)
     FDP = FP / (TP + FP)
     """
