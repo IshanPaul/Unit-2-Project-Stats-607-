@@ -106,7 +106,7 @@ For each (p,k), compute \( n = 2k\log(p-k)\theta \) for:
 - Cross-validated λ performs worse for exact recovery but similar for prediction.
 
 ---
-
+```
 Unit-2-Project-Stats-607-/
 ├── Makefile
 ├── README.md
@@ -131,7 +131,7 @@ Unit-2-Project-Stats-607-/
 │   ├── raw/
 │   ├── figures/
 │   └── analysis/
-
+```
 
 **Reference:**  
 Wainwright, M. J. (2009). *Sharp thresholds for high-dimensional and noisy sparsity recovery using ℓ₁-constrained quadratic programming (Lasso)*. IEEE Trans. Info. Theory, 55(5), 2183–2202.
