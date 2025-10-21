@@ -1,5 +1,5 @@
 # ======================================================
-# Makefile — Full workflow: Lasso simulation + analysis + plots + lambda search + tests
+# Makefile — Full workflow: Lasso simulation + analysis + plots + lambda search + heatmaps + tests
 # ======================================================
 
 PYTHON = python
@@ -11,9 +11,9 @@ TESTS = tests
 SCRIPTS = scripts
 
 # ------------------------------------------------------
-# Default target: install → simulate → analyze → figures → lambda search → test
+# Default target: install → simulate → analyze → figures → lambda_search → heatmaps → test
 # ------------------------------------------------------
-all: install simulate analyze figures lambda_search test
+all: install simulate analyze figures lambda_search heatmaps test
 
 # ------------------------------------------------------
 # Step 0: Install dependencies
@@ -23,7 +23,7 @@ install:
 	pip install -r requirements.txt
 
 # ------------------------------------------------------
-# Step 1: Run simulation pipeline
+# Step 1: Run main simulation
 # ------------------------------------------------------
 simulate:
 	@echo "▶ Running main simulation pipeline..."
@@ -37,7 +37,7 @@ analyze:
 	$(PYTHON) $(SRC)/figures.py --analyze $(RAW) --save $(RESULTS)
 
 # ------------------------------------------------------
-# Step 3: Generate plots and figures
+# Step 3: Generate standard plots
 # ------------------------------------------------------
 figures:
 	@echo "📈 Generating plots..."
@@ -51,14 +51,21 @@ lambda_search:
 	$(PYTHON) $(SCRIPTS)/focused_search_lam.py
 
 # ------------------------------------------------------
-# Step 5: Run unit tests
+# Step 5: Heatmap sweeps (lambda vs sigma, lambda vs k)
+# ------------------------------------------------------
+heatmaps:
+	@echo "🔥 Running heatmap sweeps (lambda, sigma) and (lambda, k)..."
+	$(PYTHON) $(SCRIPTS)/heatmaps.py
+
+# ------------------------------------------------------
+# Step 6: Run unit tests
 # ------------------------------------------------------
 test:
 	@echo "🧪 Running tests..."
 	pytest -q $(TESTS)
 
 # ------------------------------------------------------
-# Step 6: Clean generated results
+# Step 7: Clean generated results
 # ------------------------------------------------------
 clean:
 	@echo "🧹 Cleaning up generated files..."
@@ -74,4 +81,4 @@ clean:
 check:
 	pytest -q $(TESTS)
 
-.PHONY: all install simulate analyze figures lambda_search test clean check
+.PHONY: all install simulate analyze figures lambda_search heatmaps test clean check
