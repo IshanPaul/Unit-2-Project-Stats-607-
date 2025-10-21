@@ -23,7 +23,7 @@ def fit_lasso(X, y, lam, max_iter=1000):
     lasso.fit(X, y)
     return lasso.coef_
 
-def theoretical_lambda(sigma, n, p, c=1.0):
+def theoretical_lambda(sigma, n, p, c=2.0):
     """
     Compute theoretical best lambda(Wainright(2009)) for Lasso based on noise level sigma,
     number of samples n, and number of features p.
