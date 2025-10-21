@@ -87,10 +87,13 @@ def run_simulation(n, p, k, rho, b, sigma, lam_factor, n_reps, seed=None, save: 
 
 if __name__ == "__main__":
     # Example usage
+    p = 1000
+    k = 50
+
     df_results = run_simulation(
         n=100,
-        p=200,
-        k=10,
+        p=p,
+        k=k,
         rho=0.5,
         b=1.0,
         sigma=1.0,
