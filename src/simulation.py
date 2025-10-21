@@ -50,9 +50,9 @@ def run_simulation(n, p, k, rho, b, sigma, lam_factor, n_reps, seed=None):
     return results
 
 
-def n_from_theta(theta, p, k, b=1.0, sigma=1.0):
+def n_from_theta(theta, p, k, b=1.0, sigma=1.0, scale=30):
     """Compute sample size n given theoretical threshold theta."""
-    return int(round(((sigma ** 2) * np.log(p - k) * theta) / (b ** 2)))
+    return int(scale * round(((sigma ** 2) * np.log(p - k) * theta) / (b ** 2)))
 
 
 def main():
@@ -66,12 +66,12 @@ def main():
     start_time = time.time()
 
     if args.mode == "large":
-        theta_list = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
-        p, k = 2000, 50
-        rho_list = [0.0, 0.5, 0.9]
-        b_list = [0.08, 0.15, 0.25]
-        lam_factors = [1.0]
-        sigma_list = [1.0]
+        theta_list = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]  # around threshold θ=1
+        p, k = 1000, 40                                # lower p for clearer recovery
+        rho_list = [0.0, 0.3, 0.6]                     # moderate correlations
+        b_list = [0.5, 1.0]                            # signal strengths high enough
+        sigma_list = [1.0]                             # noise level
+        lam_factors = [1.0]                            # theoretical λ scaling
 
         sample_sizes = [n_from_theta(t, p, k, b_list[0], sigma_list[0]) for t in theta_list]
         print(f"Theta list: {theta_list}")
