@@ -1,40 +1,77 @@
-# Makefile — Run entire Lasso simulation study
+# ======================================================
+# Makefile — Full workflow: Lasso simulation + analysis + plots + lambda search + tests
+# ======================================================
 
 PYTHON = python
 SRC = src
 RESULTS = results
 RAW = $(RESULTS)/raw
 FIGURES = $(RESULTS)/figures
+TESTS = tests
+SCRIPTS = scripts
 
-# Default target: run everything
-all: simulate analyze figures
+# ------------------------------------------------------
+# Default target: install → simulate → analyze → figures → lambda search → test
+# ------------------------------------------------------
+all: install simulate analyze figures lambda_search test
 
-# Step 1: Run simulation
-simulate:
-	@echo "▶ Running simulation pipeline..."
-	$(PYTHON) $(SRC)/simulation.py --save $(RAW)
-
-# Step 2: Analyze aggregated results
-analyze:
-	@echo "▶ Aggregating and analyzing results..."
-	$(PYTHON) $(SRC)/figures.py --analyze $(RAW) --save $(RESULTS)
-
-# Step 3: Generate figures
-figures:
-	@echo "▶ Generating plots..."
-	$(PYTHON) $(SRC)/figures.py --plot $(RESULTS)/summary.csv --out $(FIGURES)
-
-# Step 4: Run tests
-test:
-	pytest -q
-
-# Step 5: Clean up
-clean:
-	@echo "🧹 Cleaning up results..."
-	rm -rf $(RAW)/*.csv $(RAW)/*.pkl $(RESULTS)/summary.csv $(FIGURES)/*.png
-
-# Step 6: Install dependencies
+# ------------------------------------------------------
+# Step 0: Install dependencies
+# ------------------------------------------------------
 install:
+	@echo "📦 Installing dependencies..."
 	pip install -r requirements.txt
 
-.PHONY: all simulate analyze figures test clean install
+# ------------------------------------------------------
+# Step 1: Run simulation pipeline
+# ------------------------------------------------------
+simulate:
+	@echo "▶ Running main simulation pipeline..."
+	$(PYTHON) $(SRC)/simulation.py --save $(RAW)
+
+# ------------------------------------------------------
+# Step 2: Aggregate and analyze results
+# ------------------------------------------------------
+analyze:
+	@echo "📊 Aggregating and analyzing results..."
+	$(PYTHON) $(SRC)/figures.py --analyze $(RAW) --save $(RESULTS)
+
+# ------------------------------------------------------
+# Step 3: Generate plots and figures
+# ------------------------------------------------------
+figures:
+	@echo "📈 Generating plots..."
+	$(PYTHON) $(SRC)/figures.py --plot $(RESULTS)/summary.csv --out $(FIGURES)
+
+# ------------------------------------------------------
+# Step 4: Focused lambda-factor search
+# ------------------------------------------------------
+lambda_search:
+	@echo "🔍 Running focused lambda-factor search..."
+	$(PYTHON) $(SCRIPTS)/focused_search_lam.py
+
+# ------------------------------------------------------
+# Step 5: Run unit tests
+# ------------------------------------------------------
+test:
+	@echo "🧪 Running tests..."
+	pytest -q $(TESTS)
+
+# ------------------------------------------------------
+# Step 6: Clean generated results
+# ------------------------------------------------------
+clean:
+	@echo "🧹 Cleaning up generated files..."
+	rm -rf $(RAW)/*.csv $(RAW)/*.pkl \
+	       $(RESULTS)/summary.csv \
+	       $(FIGURES)/*.png \
+	       $(RESULTS)/analysis/*.csv \
+	       $(RESULTS)/analysis/*.png
+
+# ------------------------------------------------------
+# Utility: run only tests (quick check)
+# ------------------------------------------------------
+check:
+	pytest -q $(TESTS)
+
+.PHONY: all install simulate analyze figures lambda_search test clean check
