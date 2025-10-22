@@ -16,14 +16,14 @@ We varied feature correlation (ρ), signal strength (b), and the derived sample 
 
 ## 1. Key Results
 
-### A. Effect of Signal Strength (βₘᵢₙ)
+### A. Effect of Signal Strength (β_min)
 
 ![Exact Phase Transition by β_min](results/figures/exact_phase_transition_bybeta_min_wainwright2009.png)
 
 ![Unsigned Phase Transition by β_min](results/figures/unsigned_phase_transition_bybeta_min_wainwright2009.png)
 
-- The **blue curve (βₘᵢₙ = 0.5)** shows a clear phase transition around **θ ≈ 1**, consistent with Wainwright’s theoretical threshold.
-- The **orange curve (βₘᵢₙ = 1.0)** remains near zero, suggesting that in this parameterization, the effective sample size for large b values may fall below the transition point due to the way n scales with θ.
+- The **blue curve (β_min= 0.5)** shows a phase transition around **θ ≈ 1**, consistent with Wainwright’s theoretical threshold.
+- The **orange curve (β_min = 1.0)** remains near zero, suggesting that in this parameterization, the effective sample size for large b values may fall below the transition point due to the way n scales with θ.
 - Both plots demonstrate the *sharpness* of the recovery boundary — once θ crosses 1, the exact and unsigned support recovery probabilities quickly approach 1.
 
 ### B. Effect of Correlation (ρ)
@@ -56,15 +56,13 @@ The unsigned recovery plots follow the same pattern but show slightly higher pro
 ## 3. Design Reflection
 
 ### Strengths
-- The simulation reproduces the core phase transition with moderate computational cost.
+- The simulation reproduces the core phase transition with moderate computational cost and a total runtime of 29.74 minutes.
 - The use of θ as a unifying parameter aligns with the theoretical framework and simplifies interpretation.
 - Parallelization and reproducible seeds make the experiment efficient and replicable.
 
 ### Limitations
-- For large βₘᵢₙ, some regions of θ produced degenerate results due to the interplay between n and b in the scaling formula.
+- Some regions of θ produced degenerate results, which may be due to insufficient replications for a fixed n,p,k,rho. In our experiments we keep replications at 1000 but more may be required as exact support recovery seems to be a very strict condition and is difficult to find.
 - Only one noise level (σ = 1.0) and λ scaling (λ_factor = 1.0) were tested.
-- Recovery rates could be smoother with more replicates per condition (e.g., n_reps = 100).
-
 ---
 
 ## 4. Conclusions
@@ -78,15 +76,8 @@ Overall, the results strongly support Wainwright’s theoretical findings and pr
 
 ---
 
-## 5. Future Directions
-
-Potential extensions include:
-- Exploring higher noise levels (σ > 1) and varying λ scaling factors.
-- Testing alternative estimators (e.g., debiased Lasso, SCAD).
-- Quantifying uncertainty with confidence bands across repetitions.
-- Investigating runtime and scalability under increasing p.
-
----
+## 5. Choice of Parameters
+Choice of parameters such as rho, b, p, k, lambda has a huge effect on the exact support recovery rate. In fact after several simulation experiments, I got non-zero support recovery rate for very specific values of the parameters.
 
 ## Reproducibility
 
@@ -104,6 +95,6 @@ Random seed: `numpy.random.default_rng(42)`
 
 ---
 
-**Author:** [Your Name]  
+**Author:** Ishan Paul 
 **Course:** Unit 2 — Simulation Study  
 **Date:** October 2025

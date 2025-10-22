@@ -32,7 +32,7 @@ Y = X\beta + \varepsilon,
 where:
 - \( X \in \mathbb{R}^{n \times p} \) has rows \( x_i \sim \mathcal{N}(0, \Sigma) \)
 - \( \Sigma_{ij} = \rho^{|i-j|} \) introduces Toeplitz-style correlations between features
-- \( \beta \in \mathbb{R}^p \) has \( k \) nonzero entries equal to \( b \)
+- \( \beta \in \mathbb{R}^p \) has \( k \) nonzero entries equal to \( b or -b\)
 - \( \varepsilon \sim \mathcal{N}(0, \sigma^2 I_n) \)
 
 ### Parameter grid
@@ -49,6 +49,10 @@ where:
 | n | Computed from θ using `n_from_theta()` | Derived sample size |
 | Repetitions | 50 (default) | Monte Carlo replications |
 
+\[
+    n_from_theta = \frac{scale\theta\sigma^2\log(p-k)}{b^2}
+]
+where scale = 30, otherwise values of n would be too small.
 Each parameter combination defines one simulation condition.
 
 ---
