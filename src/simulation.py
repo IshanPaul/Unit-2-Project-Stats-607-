@@ -66,7 +66,7 @@ def main():
     start_time = time.time()
 
     if args.mode == "large":
-        theta_list = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]  # around threshold θ=1
+        theta_list = np.arange(0.5, 2.05, 0.05).round(2).tolist()  # around threshold θ=1
         p, k = 1000, 40                                # lower p for clearer recovery
         rho_list = [0.0, 0.3, 0.6]                     # moderate correlations
         b_list = [0.5, 1.0]                            # signal strengths high enough

@@ -27,6 +27,10 @@ simulate:
 large:
 	$(PYBIN) -m src.simulation --mode large --save --n_jobs $(NCORES)
 
+# Analyze results
+analyze:
+	$(PYBIN) -m src.analyze
+
 # Generate visualizations
 figures:
 	$(PYBIN) -m src.figures
