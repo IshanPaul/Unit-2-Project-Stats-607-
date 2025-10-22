@@ -151,9 +151,9 @@ Expected outcomes:
 - All results saved automatically with timestamps
 - Run full experiment with:
   ```bash
-  python main.py --mode large --n_jobs 8 --save
+  python main.py --mode large --n_jobs 10 --save
   ```
-- Runtime: ~10–30 minutes on an 8-core machine
+- Runtime: 29.74 minutes on an 10-core machine
 
 ---
 

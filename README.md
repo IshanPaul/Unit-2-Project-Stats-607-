@@ -181,6 +181,5 @@ If reproducing or extending this work, please cite:
 ## Author & Acknowledgments
 
 Prepared for **Unit 2 Project — Simulation Study**  
-Course: *Advanced Statistical Computing / Simulation Methods*  
-Instructor: *[Your Instructor’s Name]*  
-Author: *[Your Name]*  
+Course: *Advanced Statistical Computing / Simulation Methods*   
+Author: *Ishan Paul*  
