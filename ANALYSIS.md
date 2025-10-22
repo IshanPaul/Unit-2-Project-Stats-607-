@@ -1,5 +1,8 @@
 # ANALYSIS — Reproduction of Wainwright (2009)
 
+## Repository Link
+[Link](https://github.com/IshanPaul/Unit-2-Project-Stats-607-.git)
+
 ## Overview
 
 This analysis summarizes the empirical findings from the simulation study replicating **Wainwright (2009)**:  
