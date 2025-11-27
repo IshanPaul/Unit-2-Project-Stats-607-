@@ -4,14 +4,14 @@ from tqdm import tqdm
 from src.dgps import generate_data
 from src.methods import fit_lasso, theoretical_lambda
 from src.metrics import mse, tpr_fdp, exact_support_recovery, support_recovery
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor
 from src.sim_runner import run_simulation
+from src.utils import run_batch
 import argparse, os, time
 
 def n_from_theta(theta, p, k, b=1.0, sigma=1.0, scale=30):
     """Compute sample size n given theoretical threshold theta."""
     return int(scale * round(((sigma ** 2) * np.log(p - k) * theta) / (b ** 2)))
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -19,23 +19,18 @@ def main():
     parser.add_argument("--n_reps", type=int, default=1000)
     parser.add_argument("--save", action="store_true")
     parser.add_argument("--n_jobs", type=int, default=None, help="Number of parallel workers (default: all cores)")
+    parser.add_argument("--batch_size", type=int, default=5, help="Number of parameter combos per worker")
     args = parser.parse_args()
 
     start_time = time.time()
 
     if args.mode == "large":
-        theta_list = np.arange(0.5, 2.05, 0.05).round(2).tolist()  # around threshold θ=1
-        p, k = 1000, 40                                # lower p for clearer recovery
-        rho_list = [0.0, 0.3, 0.6]                     # moderate correlations
-        b_list = [0.5, 1.0]                            # signal strengths high enough
-        sigma_list = [1.0]                             # noise level
-        lam_factors = [1.0]                            # theoretical λ scaling
-
-        sample_sizes = [n_from_theta(t, p, k, b_list[0], sigma_list[0]) for t in theta_list]
-        print(f"Theta list: {theta_list}")
-        print(f"Computed n_list (p={p}, k={k}, b={b_list[0]}): {sample_sizes}")
-
-        rng = np.random.default_rng(42)
+        theta_list = np.arange(0.5, 2.05, 0.05).round(2).tolist()
+        p, k = 1000, 40
+        rho_list = [0.0, 0.3, 0.6]
+        b_list = [0.5, 1.0]
+        sigma_list = [1.0]
+        lam_factors = [1.0]
 
         combos = [
             (n_from_theta(t, p, k, b, sigma), p, k, rho, b, sigma, lam_factor, args.n_reps)
@@ -46,20 +41,21 @@ def main():
             for t in theta_list
         ]
 
-        print(f"Launching {len(combos)} parallel simulations using {args.n_jobs or os.cpu_count()} workers...")
+        # Batch combos to reduce overhead
+        batch_size = args.batch_size
+        batched_combos = [combos[i:i+batch_size] for i in range(0, len(combos), batch_size)]
+
+        print(f"Launching {len(batched_combos)} batches using {args.n_jobs or os.cpu_count()} workers...")
 
         all_results = []
         with ProcessPoolExecutor(max_workers=args.n_jobs) as executor:
-            futures = {
-                executor.submit(run_simulation, *combo, seed=rng.integers(0, 1e6)): combo
-                for combo in combos
-            }
-            for future in tqdm(as_completed(futures), total=len(futures), desc="Parameter grid"):
-                try:
-                    all_results.append(future.result())
-                except Exception as e:
-                    print(f"Error: {e}")
+            # executor.map avoids excessive polling and lock overhead
+            for batch_results in tqdm(executor.map(run_batch, batched_combos),
+                                      total=len(batched_combos),
+                                      desc="Parameter grid"):
+                all_results.extend(batch_results)
 
+        # Save results
         if all_results:
             results_df = pd.DataFrame(all_results)
             if args.save:
