@@ -1,17 +1,17 @@
 # src/simulation.py
+import cProfile
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-from concurrent.futures import ProcessPoolExecutor
-import argparse, os, time
-
-from src.sim_runner import run_simulation
+from concurrent.futures import ProcessPoolExecutor, as_completed
+import argparse
+import os
+import time
 from src.sim_helpers import run_simulation_grid
 
 # -------------------------------
 # Utility functions
 # -------------------------------
-
 def n_from_theta(theta, p, k, b=1.0, sigma=1.0, scale=30):
     """Compute sample size n given theoretical threshold theta."""
     return int(scale * round(((sigma ** 2) * np.log(p - k) * theta) / (b ** 2)))
@@ -19,14 +19,13 @@ def n_from_theta(theta, p, k, b=1.0, sigma=1.0, scale=30):
 # -------------------------------
 # Main function
 # -------------------------------
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", type=str, default="small")
     parser.add_argument("--n_reps", type=int, default=1000)
     parser.add_argument("--save", action="store_true")
     parser.add_argument("--n_jobs", type=int, default=None, help="Number of parallel workers (default: all cores)")
-    parser.add_argument("--batch_size", type=int, default=5, help="Number of parameter combos per worker")
+    parser.add_argument("--batch_size", type=int, default=10, help="Save results every N batches")
     args = parser.parse_args()
 
     start_time = time.time()
@@ -57,42 +56,75 @@ def main():
     print(f"Launching {len(combos)} parameter combinations using {args.n_jobs or os.cpu_count()} workers...")
 
     # -------------------------------
-    # Run simulations in parallel
+    # Run simulations in parallel with batching
     # -------------------------------
-    all_results = []
-    rng = np.random.default_rng(42)  # fixed seed for reproducibility
+    os.makedirs("results/raw", exist_ok=True)
+    csv_path = "results/raw/large_experiment_parallel.csv"
+    
+    # Generate unique seeds for each combination
+    base_rng = np.random.default_rng(42)
+    seeds = base_rng.integers(0, 2**31, size=len(combos))
+
+    batch_results = []
+    completed_count = 0
 
     with ProcessPoolExecutor(max_workers=args.n_jobs) as executor:
-        # submit jobs
-        futures = [
-            executor.submit(run_simulation_grid, combo, args.n_reps, rng.integers(0, 1_000_000))
-            for combo in combos
-        ]
+        # Submit all jobs with unique seeds
+        # batch_size controls memory per worker: 100=~240MB, 50=~120MB, 200=~480MB
+        future_to_combo = {
+            executor.submit(run_simulation_grid, combo, args.n_reps, seed, 
+                          batch_size=100, low_memory=False): (combo, seed)
+            for combo, seed in zip(combos, seeds)
+        }
 
-        # collect results with progress bar
-        for future in tqdm(futures, total=len(futures), desc="Parameter grid"):
-            all_results.append(future.result())
+        # Process results as they complete
+        with tqdm(total=len(combos), desc="Parameter grid") as pbar:
+            for future in as_completed(future_to_combo):
+                try:
+                    result = future.result()
+                    batch_results.append(result)
+                    completed_count += 1
+                    pbar.update(1)
 
-    # -------------------------------
-    # Save results
-    # -------------------------------
-    if all_results:
-        results_df = pd.DataFrame(all_results)
-        if args.save:
-            os.makedirs("results/raw", exist_ok=True)
-            csv_path = "results/raw/large_experiment_parallel.csv"
-            results_df.to_csv(csv_path, index=False)
-            print(f"Results saved to {csv_path}")
-    else:
-        print("No results generated — check logs above.")
+                    # Save incrementally every batch_size iterations
+                    if completed_count % args.batch_size == 0:
+                        results_df = pd.DataFrame(batch_results)
+                        if completed_count == args.batch_size:
+                            # First batch: create new file
+                            results_df.to_csv(csv_path, index=False, mode='w')
+                        else:
+                            # Append to existing file
+                            results_df.to_csv(csv_path, index=False, mode='a', header=False)
+                        
+                        print(f"\nSaved batch ({completed_count}/{len(combos)} completed)")
+                        batch_results = []  # Clear memory
+                        
+                except Exception as e:
+                    print(f"\nError in simulation: {e}")
+                    pbar.update(1)
+
+    # Save any remaining results
+    if batch_results:
+        results_df = pd.DataFrame(batch_results)
+        if completed_count <= args.batch_size:
+            results_df.to_csv(csv_path, index=False, mode='w')
+        else:
+            results_df.to_csv(csv_path, index=False, mode='a', header=False)
+        print(f"\nSaved final batch ({completed_count}/{len(combos)} completed)")
 
     total_time = time.time() - start_time
     print(f"\nTotal simulation time: {total_time/60:.2f} minutes")
-
+    print(f"Results saved to {csv_path}")
 
 # -------------------------------
 # Entry point
 # -------------------------------
 if __name__ == "__main__":
+    profiler = cProfile.Profile()
+    profiler.enable()
+    
     main()
-
+    
+    profiler.disable()
+    profiler.dump_stats('profile.prof')
+    print("Profile saved to profile.prof")

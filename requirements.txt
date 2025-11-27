@@ -6,3 +6,6 @@ seaborn
 tqdm
 joblib
 argparse
+cprofile
+snakeviz
+pytest
