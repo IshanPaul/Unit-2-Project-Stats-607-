@@ -61,7 +61,7 @@ view-optimized-profile: ## View profiling results
 
 complexity: ## Analyze computational complexity (timing vs n)
 	@echo "Running complexity analysis..."
-	python3 scripts/complexity_analysis.py
+	python3 -m src.complexity_analysis
 	@echo "Complexity plots saved to results/figures/complexity_*.png"
 
 baseline: ## Baseline performance
@@ -80,7 +80,7 @@ parallel: ## Run optimized version with full parallelization
 
 stability-check: ## Check for numerical warnings and convergence issues
 	@echo "Running stability checks across parameter space..."
-	python3 scripts/stability_check.py
+	python3 -m src.stability_check
 	@echo "Stability report saved to results/stability_report.txt"
 
 ##@ Testing Targets
