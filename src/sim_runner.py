@@ -1,94 +1,60 @@
-# from src.dgps import generate_data
-# from src.methods import fit_lasso, theoretical_lambda
-# from src.metrics import mse, tpr_fdp, exact_support_recovery, support_recovery
-# import numpy as np
-
-# def run_simulation(n, p, k, rho, b, sigma, lam_factor, n_reps, seed=None):
-#     rng = np.random.default_rng(seed)
-
-#     mse_list, tpr_list, fdp_list, exact_list, unsigned_list = [], [], [], [], []
-#     for _ in range(n_reps):
-#         sim_seed = rng.integers(0, 1e6)
-#         X, y, beta_true, support_true = generate_data(n, p, k, rho, b, sigma, seed=sim_seed)
-#         lam = theoretical_lambda(sigma, n, p)*lam_factor
-#         beta_est = fit_lasso(X, y, lam)
-
-#         mse_list.append(mse(beta_true, beta_est))
-#         tpr, fdp   = tpr_fdp(beta_true, beta_est)
-#         exact_list.append(exact_support_recovery(beta_true, beta_est))
-#         unsigned_list.append(support_recovery(beta_true, beta_est))
-
-#     return dict(
-#         theta = (n * b**2) / (sigma**2 * np.log(p-k)),
-#         rho=rho, beta_min=b,
-#         average_mse=np.mean(mse_list),
-#         average_tpr=np.mean(tpr_list),
-#         average_fdp=np.mean(fdp_list),
-#         exact_support_recovery_rate=np.mean(exact_list),
-#         unsigned_support_recovery_rate=np.mean(unsigned_list),
-#         lambda_used=lam
-#     )
-
 import numpy as np
-from src.dgps import generate_data
-from src.methods import fit_lasso, theoretical_lambda
-from src.metrics import mse, tpr_fdp, exact_support_recovery, support_recovery, batch_metrics
+from sklearn.linear_model import Lasso
+from joblib import Parallel, delayed
+from src.dgps import generate_X, generate_beta
+from src.methods import theoretical_lambda
+from src.metrics import batch_metrics, support_recovery
 
-def run_simulation(n, p, k, rho, b, sigma, lam_factor, n_reps, seed=None):
+def run_simulation(n, p, k, rho, b, sigma, lam_factor, n_reps, seed=None, n_jobs=-1):
     """
-    Vectorized simulation runner for n_reps repetitions.
-    
-    Parameters
-    ----------
-    n, p, k : int
-        Sample size, number of features, number of non-zero coefficients.
-    rho : float
-        Feature correlation for Toeplitz covariance.
-    b : float
-        Signal magnitude for non-zero coefficients.
-    sigma : float
-        Noise standard deviation.
-    lam_factor : float
-        Multiplicative factor on theoretical lambda.
-    n_reps : int
-        Number of simulation repetitions.
-    seed : int, optional
-        Random seed.
-    
-    Returns
-    -------
-    dict
-        Summary metrics of simulation.
+    Fully vectorized simulation runner with parallel Lasso fitting.
     """
     rng = np.random.default_rng(seed)
     
-    # Preallocate arrays
-    beta_true_array = np.zeros((n_reps, p))
-    beta_est_array = np.zeros((n_reps, p))
-    
+    # Compute lambda
     lam = theoretical_lambda(sigma, n, p) * lam_factor
     
-    # Vectorized simulation loop
+    # Generate all beta_true vectors and supports
+    beta_true_array = np.zeros((n_reps, p))
+    supports = []
     for i in range(n_reps):
-        sim_seed = rng.integers(0, 1_000_000)
-        X, y, beta_true, _ = generate_data(n, p, k, rho, b, sigma, seed=sim_seed)
-        beta_est = fit_lasso(X, y, lam)
-        
+        beta_true, support = generate_beta(p, k, b, seed=rng.integers(0, 1_000_000))
         beta_true_array[i] = beta_true
-        beta_est_array[i] = beta_est
-
-    # Compute all metrics in batch
-    metrics = batch_metrics(beta_true_array, beta_est_array)
+        supports.append(support)
     
+    # Generate all design matrices X and noise vectors y
+    X_array = np.array([generate_X(n, p, rho, seed=rng.integers(0, 1_000_000)) for _ in range(n_reps)])
+    y_array = X_array @ beta_true_array.T + rng.normal(0, sigma, size=(n, n_reps))
+    y_array = y_array.T  # shape: (n_reps, n)
+
+    # Solve Lasso in parallel
+    def fit_lasso_row(X, y):
+        lasso = Lasso(alpha=lam, fit_intercept=False, max_iter=1000)
+        lasso.fit(X, y)
+        return lasso.coef_
+    
+    beta_est_array = np.array(
+        Parallel(n_jobs=n_jobs)(
+            delayed(fit_lasso_row)(X_array[i], y_array[i]) for i in range(n_reps)
+        )
+    )
+
+    # Compute metrics fully vectorized
+    metrics = batch_metrics(beta_true_array, beta_est_array)
+
+    # Vectorized unsigned support recovery
+    support_true_mask = np.abs(beta_true_array) > 1e-8
+    support_est_mask = np.abs(beta_est_array) > 1e-8
+    unsigned_recovery = np.all(support_true_mask == support_est_mask, axis=1)
+
     return dict(
-        theta = (n * b**2) / (sigma**2 * np.log(p - k)),
+        theta=(n * b**2) / (sigma**2 * np.log(p - k)),
         rho=rho,
         beta_min=b,
         average_mse=np.mean(metrics['mse']),
         average_tpr=np.mean(metrics['TPR']),
         average_fdp=np.mean(metrics['FDP']),
         exact_support_recovery_rate=np.mean(metrics['exact_recovery']),
-        unsigned_support_recovery_rate=np.mean([support_recovery(beta_true_array[i], beta_est_array[i]) for i in range(n_reps)]),
+        unsigned_support_recovery_rate=np.mean(unsigned_recovery),
         lambda_used=lam
     )
-
