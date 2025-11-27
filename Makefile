@@ -1,9 +1,10 @@
-# Makefile for Unit 2/3 Simulation Study
+# Corrected Makefile for Unit 2/3 Simulation Study
 # High-Performance Lasso Support Recovery Simulation
 
 .PHONY: help venv install clean simulate analyze figures all \
         profile complexity benchmark parallel stability-check \
-        test test-regression baseline-run optimized-run compare
+        test test-regression baseline-run optimized-run compare \
+        docs view-profile
 
 # Default target
 .DEFAULT_GOAL := help
@@ -39,36 +40,42 @@ figures: ## Generate all figures
 all: simulate analyze figures ## Run complete pipeline
 	@echo "Complete pipeline finished"
 
-##@ Unit 3 Targets (Profiling & Optimization)
+##@ Unit 3 Targets (Profiling & Optimization)touc
 
-profile: ## Profile representative simulation
-	@echo "Running profiled simulation..."
-	@echo "Using n_jobs=10 for realistic workload"
-	python3 -m src.simulation --mode large --n_jobs 10 --save
-	@echo ""
-	@echo "Profile saved to profile.prof"
-	@echo "View with: python3 -m snakeviz profile.prof"
-	@echo "Or terminal: python3 -m pstats profile.prof"
+view-baseline-profile: ## View profiling results
+	@if [ -f profile.prof ]; then \
+		echo "Opening profile visualization..."; \
+		python3 -m snakeviz baseline.prof; \
+	else \
+		echo "No profile found. Run 'make profile' first"; \
+	fi
+
+view-optimized-profile: ## View profiling results
+	@if [ -f profile2.prof ]; then \
+		echo "Opening profile visualization..."; \
+		python3 -m snakeviz profile2.prof; \
+	else \
+		echo "No profile found. Run 'make profile' first"; \
+	fi
+
 
 complexity: ## Analyze computational complexity (timing vs n)
 	@echo "Running complexity analysis..."
 	python3 scripts/complexity_analysis.py
 	@echo "Complexity plots saved to results/figures/complexity_*.png"
 
-benchmark: ## Compare baseline vs optimized performance
+baseline: ## Baseline performance
 	@echo "Running benchmark comparison..."
 	@echo ""
 	@echo "=== Baseline (parallel) ==="
-	time python3 scripts.simulation --mode large --n_jobs 10
-	python3 -m cprofile -o baseline.prof -m scripts.simulation --mode large --n_jobs 10
+	python3 -m cProfile -o baseline.prof -m scripts.simulation --mode large --n_jobs 10
 	@echo ""
 	@echo "Benchmark results saved to results/baseline.prof"
-	python3 -m snakeviz baseline.prof
 
 parallel: ## Run optimized version with full parallelization
 	@echo "Running optimized parallel simulation..."
 	@echo "Using all available cores"
-	time python3 -m src.simulation --mode large --n_jobs -1 --save
+	time python3 -m src.simulation --mode large --n_jobs 6 --batch_size 5 --save
 	@echo "Parallel simulation complete"
 
 stability-check: ## Check for numerical warnings and convergence issues
@@ -93,13 +100,17 @@ test-regression: ## Verify optimizations preserve correctness
 
 baseline-run: ## Quick baseline run (small scale for testing)
 	@echo "Running small baseline test..."
-	python3 -m src.simulation --mode small --n_jobs 1 --n_reps 100
+	python3 -m scripts.simulation --mode small --n_jobs 1
 
 optimized-run: ## Quick optimized run (small scale for testing)
 	@echo "Running small optimized test..."
 	python3 -m src.simulation --mode small --n_jobs 4 --n_reps 100
 
-compare: benchmark ## Alias for benchmark
+compare: ## New results (fixed indentation & corrected cProfile call)
+	@echo "Running optimized parallel simulation..."
+	@echo "Using all available cores"
+	python3 -m cProfile -o profile_new.prof -m src.simulation --mode large --n_jobs 6 --batch_size 5 --save
+	@echo "Parallel simulation complete"
 
 clean: ## Remove generated files and virtual environment
 	rm -rf venv/
@@ -121,21 +132,8 @@ docs: ## Generate documentation
 	@echo "  - docs/ADEMP.md"
 	@echo "  - README.md"
 
-view-profile: ## View profiling results
-	@if [ -f profile.prof ]; then \
-		echo "Opening profile visualization..."; \
-		python3 -m snakeviz profile.prof; \
-	else \
-		echo "No profile found. Run 'make profile' first"; \
-	fi
 
 ##@ Help
 
 help: ## Display this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make \033[36m<target>\033[0m\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  \033[36m%-20s\033[0m %s\n", $$1, $$2 } /^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
-
-# Phony targets that don't create files
-.PHONY: help venv install clean simulate analyze figures all \
-        profile complexity benchmark parallel stability-check \
-        test test-regression baseline-run optimized-run compare \
-        docs view-profile
